@@ -1,0 +1,310 @@
+//
+// TOKEN
+//
+
+IDENTIFIER =  {
+    ( "$" | "_" | ASCII_ALPHA ) ~ ( "$" | "_" | ASCII_ALPHA | ASCII_DIGIT )*
+}
+
+NUMERIC = {            // To recognize a number...
+    ASCII_DIGIT+      //   take as many ASCII digits as possible (at least one).
+}
+
+FUNCTION = {
+    "function"
+}
+
+EQUALS_SIGN = {
+    "="
+}
+
+YIELD = {
+    "yield"
+}
+
+AWAIT = {
+    "await"
+}
+
+LET = {
+    "let"
+}
+
+CONST = {
+    "const"
+}
+
+SEMICOLON = {
+    ";"
+}
+
+// Build-In rule NEWLINE: NEWLINE	any line feed format	"\n" | "\r\n" | "\r"
+
+// Handling whitespace can be inconvenient for large grammars. Explicitly writing a whitespace rule and manually inserting it makes a grammar difficult to read and modify. pest provides a solution using the special rule WHITESPACE. If defined, it will be implicitly run, as many times as possible, at every tilde ~ and between every repetition (for example, * and +). For our INI parser, only spaces are legal whitespace.
+// We mark the WHITESPACE rule silent with a leading low line (underscore) _{ ... }. This way, even if it matches, it won't show up inside other rules. If it weren't silent, parsing would be much more complicated, since every call to Pairs::next(...) could potentially return Rule::WHITESPACE instead of the desired next regular rule.
+WHITESPACE = _{ ( " " | "\t" | NEWLINE ) }
+
+// I do not understand why I need to explicitly allow comments in the grammar rules!
+// Why is the COMMENT rule different from the WHITESPACE rule?
+COMMENT = _{
+    ( "//" ~ ( !NEWLINE ~ ANY )* )
+    |
+    ( "/*" ~ ( !"*/" ~ ANY )* ~ "*/" )
+}
+
+//
+// RULES
+//
+
+compilation_unit = {
+    ( COMMENT | function_declaration )*
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-functions-and-classes.html#prod-FunctionDeclaration
+
+function_declaration = {
+    "function" ~ IDENTIFIER ~ ("{") ~ function_body ~ ("}")
+}
+
+function_body = {
+    function_statement_list
+}
+
+function_statement_list = {
+    statement_list
+}
+
+//
+// Statements
+//
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-StatementList
+statement_list = {
+    statement_list_item+
+}
+
+statement_list_item = {
+//    statement
+//    |
+    declaration
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-Declaration
+// TODO
+declaration = {
+//    hoistable_declaration
+//    |
+//    class_declaration
+//    |
+    lexical_declaration
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-LexicalDeclaration
+lexical_declaration = {
+    let_or_const ~ binding_list ~ SEMICOLON
+}
+
+let_or_const = {
+    LET
+    |
+    CONST
+}
+
+binding_list = {
+    lexical_binding+
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-LexicalBinding
+// TODO:
+lexical_binding = {
+    binding_identifier ~ initializer?
+//    |
+//    binding_pattern ~ initializer
+}
+
+// BindingIdentifier
+binding_identifier = {
+    IDENTIFIER ~ ( YIELD | AWAIT )?
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-Initializer
+initializer = {
+    EQUALS_SIGN ~ assignment_expression
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-AssignmentExpression
+assignment_expression = {
+//    ConditionalExpression[?In, ?Yield, ?Await]
+    conditional_expression
+    |
+//    [+Yield] YieldExpression[?In, ?Await]
+//    ArrowFunction[?In, ?Yield, ?Await]
+//    AsyncArrowFunction[?In, ?Yield, ?Await]
+//    LeftHandSideExpression[?Yield, ?Await] = AssignmentExpression[?In, ?Yield, ?Await]
+    left_hand_side_expression ~ EQUALS_SIGN ~ assignment_expression
+//    LeftHandSideExpression[?Yield, ?Await] AssignmentOperator AssignmentExpression[?In, ?Yield, ?Await]
+//    LeftHandSideExpression[?Yield, ?Await] &&= AssignmentExpression[?In, ?Yield, ?Await]
+//    LeftHandSideExpression[?Yield, ?Await] ||= AssignmentExpression[?In, ?Yield, ?Await]
+//    LeftHandSideExpression[?Yield, ?Await] ??= AssignmentExpression[?In, ?Yield, ?Await]
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-ConditionalExpression
+conditional_expression = {
+    short_circuit_expression
+    |
+    short_circuit_expression ~ "?" ~ assignment_expression ~ ":" ~ assignment_expression
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-ShortCircuitExpression
+// TODO
+short_circuit_expression = {
+    logical_or_expression
+    //|
+    //coalesce_expression
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-LogicalORExpression
+logical_or_expression = {
+    logical_and_expression ~ ( "||" ~ logical_or_expression )*
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-LogicalANDExpression
+logical_and_expression = {
+    //bitwise_or_expression
+    //|
+    //logical_and_expression ~ "&&" ~ bitwise_or_expression
+
+    bitwise_or_expression ~ ( "||" ~ logical_and_expression )*
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-BitwiseORExpression
+bitwise_or_expression = {
+    //bitwise_xor_expression
+    //|
+    //bitwise_or_expression ~ "|" ~ bitwise_xor_expression
+
+    bitwise_xor_expression ~ ( "||" ~ bitwise_or_expression )*
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-BitwiseXORExpression
+bitwise_xor_expression = {
+    //bitwise_and_expression
+    //|
+    //bitwise_xor_expression ~ "^" ~ bitwise_and_expression
+
+    bitwise_and_expression ~ ( "||" ~ bitwise_xor_expression )*
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-BitwiseANDExpression
+bitwise_and_expression = {
+    //equality_expression
+    //|
+    //bitwise_and_expression ~ "&" ~ equality_expression
+
+    equality_expression ~ ( "||" ~ bitwise_and_expression )*
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-EqualityExpression
+equality_expression = {
+    relational_expression
+    // TODO
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-RelationalExpression
+relational_expression = {
+    shift_expression
+    // TODO
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-ShiftExpression
+shift_expression = {
+    additive_expression
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-AdditiveExpression
+additive_expression = {
+    multiplicative_expression
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-MultiplicativeExpression
+multiplicative_expression = {
+    exponentiation_expression
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-ExponentiationExpression
+exponentiation_expression = {
+    unary_expression
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-UnaryExpression
+unary_expression = {
+    update_expression
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-UpdateExpression
+update_expression = {
+    left_hand_side_expression
+}
+
+
+
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-LeftHandSideExpression
+left_hand_side_expression = {
+    new_expression
+//    |
+//    call_expression
+    |
+    optional_expression
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-NewExpression
+// TODO
+new_expression = {
+    member_expression
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-MemberExpression
+// TODO
+member_expression = {
+    primary_expression
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-OptionalExpression
+optional_expression = {
+    member_expression
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-PrimaryExpression
+// TODO
+primary_expression = {
+    literal
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-Literal
+literal = {
+    //NullLiteral
+    //BooleanLiteral
+    NumericLiteral
+    //StringLiteral
+
+    //IDENTIFIER
+
+}
+
+NumericLiteral = {
+    NUMERIC
+}
+
+
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-Statement
+//statement
+
+
+expression = {      // To recognize an expression...
+    NUMERIC         //   first try to take a number...
+    |
+    "true"          //   or, if that fails, the string "true".
+}
+
