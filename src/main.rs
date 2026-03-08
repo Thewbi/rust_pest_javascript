@@ -11,11 +11,31 @@ fn main() {
 
     println!("Hello, world!");
 
+    //let filename = "examples/snippets/scratchpad.js";
+
     //let filename = "examples/snippets/single_line_comments.js";
-    //let filename = "examples/snippets/assignment.js";
-    let filename = "examples/snippets/assignment_2.js";
+
+    let filename = "examples/snippets/assignment.js";
+    let src = fs::read_to_string(&filename).expect("Failed to read file");
+    let successful_parse = CSVParser::parse(Rule::compilation_unit, &src);
+
+    //let filename = "examples/snippets/assignment_expression.js";
+    //let filename = "examples/snippets/relational_expression.js";
+    //let filename = "examples/snippets/assignment_2.js";
     //let filename = "examples/snippets/function.js";
-    //let filename = "examples/snippets/function_2.js";
+
+    // let filename = "examples/snippets/function_2.js";
+    // let src = fs::read_to_string(&filename).expect("Failed to read file");
+    // let successful_parse = CSVParser::parse(Rule::compilation_unit, &src);
+
+    // let filename = "examples/snippets/if_statement.js";
+    // let src = fs::read_to_string(&filename).expect("Failed to read file");
+    // let successful_parse = CSVParser::parse(Rule::compilation_unit, &src);
+
+    // let filename = "examples/snippets/if_else_statement.js";
+    // let src = fs::read_to_string(&filename).expect("Failed to read file");
+    // let successful_parse = CSVParser::parse(Rule::compilation_unit, &src);
+
     //let filename = "examples/snippets/let.js";
     //let filename = "examples/snippets/add_expression.js";
     //let filename = "examples/snippets/let_string.js";
@@ -23,10 +43,19 @@ fn main() {
     //let filename = "examples/snippets/nested_expression.js";
     //let filename = "examples/snippets/string_concat.js";
 
-    let src = fs::read_to_string(&filename).expect("Failed to read file");
+    //let src = fs::read_to_string(&filename).expect("Failed to read file");
 
     //let successful_parse = CSVParser::parse(Rule::compilation_unit, "function test{}");
-    let successful_parse = CSVParser::parse(Rule::compilation_unit, &src);
+    //let successful_parse = CSVParser::parse(Rule::compilation_unit, &src);
+
+    //let successful_parse = CSVParser::parse(Rule::if_statement, &src);
+
+
+
+    //let successful_parse = CSVParser::parse(Rule::assignment_expression, &src);
+
+    //let successful_parse = CSVParser::parse(Rule::relational_expression, &src);
+
     //println!("{:?}", successful_parse);
 
     // There should be a single root node in the parsed tree
@@ -69,15 +98,6 @@ fn recurse_pairs(pairs: &mut Pairs<'_, Rule>, indent: usize) {
     for mut pair in pairs {
 
         recurse_pair(&mut pair, indent);
-
-        // // A pair can be converted to an iterator of the tokens which make it up:
-        // for inner_pair in pair.into_inner() {
-        //     match inner_pair.as_rule() {
-        //         Rule::compilation_unit => println!("compilation_unit: {}", inner_pair.as_str()),
-        //         Rule::function_declaration => println!("function_declaration: {}", inner_pair.as_str()),
-        //         _ => unreachable!()
-        //     };
-        // }
     }
 }
 
@@ -85,18 +105,54 @@ fn recurse_pair(pair: &mut Pair<'_, Rule>, indent: usize) {
 
     let indent_string = "  ".repeat(indent);
 
-    match pair.as_rule() {
-        Rule::function_declaration => println!("function_declaration: {}", pair.as_str()),
-         _ => {}
-    }
+    //
+    // before the recursion
+    //
 
     // A pair is a combination of the rule which matched and a span of input
-    println!("{}Rule:    {:?}", indent_string, pair.as_rule());
-    //println!("Span:    {:?}", pair.as_span());
-    //println!("Text:    {}", pair.as_str());
+    // print!("{}Rule: {:?}", indent_string, pair.as_rule());
+    // //println!("Span:    {:?}", pair.as_span());
+    // println!(", Text: '{}'", pair.as_str().trim());
 
     for mut inner_pair in pair.clone().into_inner() {
         recurse_pair(&mut inner_pair, indent+1);
+    }
+
+    //
+    // after the recursion
+    //
+
+    match pair.as_rule() {
+
+        Rule::function_declaration => {
+            println!("function_declaration: {}", pair.as_str());
+        },
+
+        Rule::lexical_binding => {
+            println!("lexical_binding: {}", pair.as_str());
+            // for mut inner_pair in pair.clone().into_inner() {
+            //     match pair.as_rule() {
+            //         _ => {}
+            //     }
+            // }
+            for child in pair.clone().into_inner() {
+                println!("Child: {:?}", child.as_rule());
+                println!("Text: {:?}", child.as_str());
+            }
+
+            // identifier
+            let child_0 = pair.clone().into_inner().nth(0);
+            println!("child_0: {:?}", child_0.unwrap().as_str());
+
+            // assigned expression
+            let child_1 = pair.clone().into_inner().nth(1);
+            println!("child_1: {:?}", child_1.unwrap().as_str());
+
+            // TODO: after ascending from the recursion, take the
+            // latest node as assigned expression that was created by the recursion
+        },
+
+         _ => {}
     }
 
 }

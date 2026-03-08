@@ -2,7 +2,7 @@
 // TOKEN
 //
 
-IDENTIFIER =  {
+IDENTIFIER = {
     ( "$" | "_" | ASCII_ALPHA ) ~ ( "$" | "_" | ASCII_ALPHA | ASCII_DIGIT )*
 }
 
@@ -61,9 +61,33 @@ compilation_unit = {
 }
 
 // https://tc39.es/ecma262/multipage/ecmascript-language-functions-and-classes.html#prod-FunctionDeclaration
-
 function_declaration = {
-    "function" ~ IDENTIFIER ~ ("{") ~ function_body ~ ("}")
+    "function" ~ IDENTIFIER ~ ("(") ~ formal_parameters? ~ (")") ~ ("{") ~ function_body ~ ("}")
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-functions-and-classes.html#prod-FormalParameters
+formal_parameters = {
+    formal_parameter_list
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-functions-and-classes.html#prod-FormalParameterList
+formal_parameter_list = {
+    formal_parameter ~ ( "," ~ formal_parameter_list )*
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-functions-and-classes.html#prod-FormalParameter
+formal_parameter = {
+    binding_element
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-BindingElement
+binding_element = {
+    single_name_binding
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-SingleNameBinding
+single_name_binding = {
+    binding_identifier ~ initializer?
 }
 
 function_body = {
@@ -84,9 +108,29 @@ statement_list = {
 }
 
 statement_list_item = {
-//    statement
-//    |
+    statement
+    |
     declaration
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-Statement
+statement = {
+    block_statement
+    |
+    if_statement
+}
+
+block_statement = {
+    block
+}
+
+block = {
+    "{" ~ statement_list ~ "}"
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-IfStatement
+if_statement = {
+    "if" ~ "(" ~ expression ~ ")" ~ statement ~ ( "else" ~ statement )?
 }
 
 // https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-Declaration
@@ -210,9 +254,13 @@ equality_expression = {
     // TODO
 }
 
+GT = { ">" }
+
 // https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-RelationalExpression
 relational_expression = {
-    shift_expression
+    //shift_expression
+    //|
+    shift_expression ~ ( GT ~ relational_expression )?
     // TODO
 }
 
@@ -246,9 +294,6 @@ update_expression = {
     left_hand_side_expression
 }
 
-
-
-
 // https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-LeftHandSideExpression
 left_hand_side_expression = {
     new_expression
@@ -278,7 +323,14 @@ optional_expression = {
 // https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-PrimaryExpression
 // TODO
 primary_expression = {
+    identifier_reference
+    |
     literal
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-IdentifierReference
+identifier_reference = {
+    IDENTIFIER
 }
 
 // https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-Literal
@@ -298,13 +350,14 @@ NumericLiteral = {
 
 
 
-// https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-Statement
-//statement
 
 
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-Expression
 expression = {      // To recognize an expression...
-    NUMERIC         //   first try to take a number...
-    |
-    "true"          //   or, if that fails, the string "true".
+    //NUMERIC         //   first try to take a number...
+    //|
+    //"true"          //   or, if that fails, the string "true".
+
+    assignment_expression ~ ( "," ~ expression )*
 }
 

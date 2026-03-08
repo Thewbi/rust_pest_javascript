@@ -1,1 +1,3 @@
-function test { let x; }
+function test() {
+    let x;
+}
