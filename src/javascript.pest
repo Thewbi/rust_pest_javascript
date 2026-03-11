@@ -7,7 +7,7 @@ IDENTIFIER = {
 }
 
 NUMERIC = {            // To recognize a number...
-    ASCII_DIGIT+      //   take as many ASCII digits as possible (at least one).
+    ( "-" )? ~ ASCII_DIGIT+      //   take as many ASCII digits as possible (at least one).
 }
 
 FUNCTION = {
@@ -36,6 +36,30 @@ CONST = {
 
 SEMICOLON = {
     ";"
+}
+
+FOR = {
+    "for"
+}
+
+WHILE = {
+    "while"
+}
+
+SWITCH = {
+    "switch"
+}
+
+CASE = {
+    "case"
+}
+
+DEFAULT = {
+    "default"
+}
+
+BREAK = {
+    "break"
 }
 
 // Build-In rule NEWLINE: NEWLINE	any line feed format	"\n" | "\r\n" | "\r"
@@ -118,6 +142,14 @@ statement = {
     block_statement
     |
     if_statement
+    |
+    for_statement
+    |
+    while_statement
+    |
+    switch_statement
+    |
+    break_statement
 }
 
 block_statement = {
@@ -131,6 +163,50 @@ block = {
 // https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-IfStatement
 if_statement = {
     "if" ~ "(" ~ expression ~ ")" ~ statement ~ ( "else" ~ statement )?
+}
+
+// https://tc39.es/ecma262/multipage/notational-conventions.html#prod-grammar-notation-ForStatement
+for_statement = {
+    FOR ~ "(" ~ lexical_declaration ~ SEMICOLON ~ ")" ~ statement
+    |
+    FOR ~ "(" ~ lexical_declaration ~ SEMICOLON ~ expression ~ ")" ~ statement
+    |
+    FOR ~ "(" ~ lexical_declaration ~ expression ~ SEMICOLON ~ ")" ~ statement
+    |
+    FOR ~ "(" ~ lexical_declaration ~ expression ~ SEMICOLON ~ expression ~ ")" ~ statement
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-WhileStatement
+while_statement = {
+    WHILE ~ "(" ~ expression ~ ")" ~ statement
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-SwitchStatement
+switch_statement = {
+    SWITCH ~ "(" ~ expression ~ ")" ~ case_block
+}
+
+case_block = {
+    "{" ~ case_clauses ~ "}"
+    |
+    "{" ~ ( case_clauses )? ~ default_clause ~ ( case_clauses )? ~ "}"
+}
+
+case_clauses = {
+    ( case_clause )+
+}
+
+case_clause = {
+    CASE ~ expression ~ ":" ~ ( statement_list )?
+}
+
+default_clause = {
+    DEFAULT ~ ":" ~ ( statement_list )?
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-BreakStatement
+break_statement = {
+    BREAK ~ ( IDENTIFIER )? ~ SEMICOLON
 }
 
 // https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-Declaration
@@ -155,15 +231,15 @@ let_or_const = {
 }
 
 binding_list = {
-    lexical_binding+
+    ( lexical_binding )+
 }
 
 // https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-LexicalBinding
 // TODO:
 lexical_binding = {
-    binding_identifier ~ initializer?
-//    |
-//    binding_pattern ~ initializer
+    binding_identifier ~ ( initializer )?
+    |
+    binding_pattern ~ initializer
 }
 
 // BindingIdentifier
@@ -171,9 +247,29 @@ binding_identifier = {
     IDENTIFIER ~ ( YIELD | AWAIT )?
 }
 
+// https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-BindingPattern
+binding_pattern = {
+    object_binding_pattern
+    //|
+    //array_binding_pattern
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-ObjectBindingPattern
+object_binding_pattern = {
+    "{" ~ "}"
+    // TODO
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-ArrayBindingPattern
+
 // https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-Initializer
 initializer = {
     EQUALS_SIGN ~ assignment_expression
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-Expression
+expression = {      // To recognize an expression...
+    assignment_expression ~ ( "," ~ expression )*
 }
 
 // https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-AssignmentExpression
@@ -255,12 +351,13 @@ equality_expression = {
 }
 
 GT = { ">" }
+LT = { "<" }
 
 // https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-RelationalExpression
 relational_expression = {
     //shift_expression
     //|
-    shift_expression ~ ( GT ~ relational_expression )?
+    shift_expression ~ ( ( GT | LT ) ~ relational_expression )?
     // TODO
 }
 
@@ -291,7 +388,9 @@ unary_expression = {
 
 // https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-UpdateExpression
 update_expression = {
-    left_hand_side_expression
+    left_hand_side_expression ~ ( "++" | "--" )?
+    |
+    ( "++" | "--" ) ~ unary_expression
 }
 
 // https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-LeftHandSideExpression
@@ -337,27 +436,35 @@ identifier_reference = {
 literal = {
     //NullLiteral
     //BooleanLiteral
-    NumericLiteral
-    //StringLiteral
-
-    //IDENTIFIER
-
+    numeric_literal
+    |
+    string_literal
 }
 
-NumericLiteral = {
+numeric_literal = {
     NUMERIC
 }
 
-
-
-
-
-// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-Expression
-expression = {      // To recognize an expression...
-    //NUMERIC         //   first try to take a number...
-    //|
-    //"true"          //   or, if that fails, the string "true".
-
-    assignment_expression ~ ( "," ~ expression )*
+// https://tc39.es/ecma262/multipage/ecmascript-language-lexical-grammar.html#prod-StringLiteral
+//
+// https://github.com/pest-parser/book/blob/master/src/examples/rust/literals.md
+string_literal = {
+    "\"" ~ (raw_string | escape)* ~ "\""
 }
+
+raw_string = { (!("\\" | "\"") ~ ANY)+ }
+
+hex = _{ '0'..'9' | 'a'..'f' | 'A'..'F' }
+unicode_hex = { hex{1, 6} }
+
+predefined = { "n" | "r" | "t" | "\\" | "0" | "\"" | "'" }
+byte       = { "x" ~ hex{2} }
+unicode    = { "u" ~ "{" ~ unicode_hex ~ "}" }
+escape     = { "\\" ~ (predefined | byte | unicode) }
+
+
+
+
+
+
 
