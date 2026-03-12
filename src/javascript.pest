@@ -111,13 +111,15 @@ binding_element = {
 
 // https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-SingleNameBinding
 single_name_binding = {
-    binding_identifier ~ initializer?
+    binding_identifier ~ ( initializer )?
 }
 
+// https://tc39.es/ecma262/multipage/ecmascript-language-functions-and-classes.html#prod-FunctionBody
 function_body = {
     function_statement_list
 }
 
+// https://tc39.es/ecma262/multipage/ecmascript-language-functions-and-classes.html#prod-FunctionStatementList
 function_statement_list = {
     statement_list
 }
@@ -128,9 +130,10 @@ function_statement_list = {
 
 // https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-StatementList
 statement_list = {
-    statement_list_item+
+    ( statement_list_item )+
 }
 
+// https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-StatementListItem
 statement_list_item = {
     statement
     |
@@ -140,16 +143,48 @@ statement_list_item = {
 // https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-Statement
 statement = {
     block_statement
+    //|
+    //variable_statement
+    //|
+    //empty_statement
+    |
+    expression_statement
     |
     if_statement
     |
-    for_statement
+    breakable_statement
     |
-    while_statement
+    //ContinueStatement[?Yield, ?Await]
+    break_statement
+    //[+Return] ReturnStatement[?Yield, ?Await]
+    //WithStatement[?Yield, ?Await, ?Return]
+    //LabelledStatement[?Yield, ?Await, ?Return]
+    //ThrowStatement[?Yield, ?Await]
+    //TryStatement[?Yield, ?Await, ?Return]
+    //DebuggerStatement
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-BreakableStatement
+breakable_statement = {
+    iteration_statement
     |
     switch_statement
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-IterationStatement
+iteration_statement = {
+    // do_while_statement
+    //|
+    while_statement
     |
-    break_statement
+    for_statement
+    // |
+    // for_in_of_statement
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#prod-ExpressionStatement
+expression_statement = {
+    expression ~ SEMICOLON
 }
 
 block_statement = {
@@ -268,7 +303,7 @@ initializer = {
 }
 
 // https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-Expression
-expression = {      // To recognize an expression...
+expression = {
     assignment_expression ~ ( "," ~ expression )*
 }
 
@@ -395,9 +430,11 @@ update_expression = {
 
 // https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-LeftHandSideExpression
 left_hand_side_expression = {
+    call_expression
+    |
     new_expression
-//    |
-//    call_expression
+    //|
+    //call_expression // when the call_expression is located after the new_expression, parsing fails with an error!
     |
     optional_expression
 }
@@ -408,10 +445,70 @@ new_expression = {
     member_expression
 }
 
-// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-MemberExpression
-// TODO
-member_expression = {
+member_expression_helper = {
+    //PrimaryExpression[?Yield, ?Await]
     primary_expression
+    //SuperProperty[?Yield, ?Await]
+    //MetaProperty
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-MemberExpression
+member_expression = {
+
+    //MemberExpression[?Yield, ?Await] [ Expression[+In, ?Yield, ?Await] ]
+    //MemberExpression[?Yield, ?Await] . IdentifierName
+    //MemberExpression[?Yield, ?Await] TemplateLiteral[?Yield, ?Await, +Tagged]
+
+    //new MemberExpression[?Yield, ?Await] Arguments[?Yield, ?Await]
+    //MemberExpression[?Yield, ?Await] . PrivateIdentifier
+
+    member_expression_helper ~ (
+        "[" ~ expression ~ "]"
+        |
+        "." ~ identifier_name
+        //|
+        //"." ~ private_identifier
+        //|
+        //template_literal
+    )*
+}
+
+call_expression_helper = {
+    //CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await]
+    cover_call_expression_and_async_arrow_head
+    //SuperCall[?Yield, ?Await]
+    //ImportCall[?Yield, ?Await]
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-CallExpression
+call_expression = {
+    //call_expression_helper
+    //|
+    //CallExpression[?Yield, ?Await] Arguments[?Yield, ?Await]
+    //call_expression ~ arguments
+
+    //call_expression_helper ~ ( ( call_expression )? ~ arguments )*
+    call_expression_helper
+
+    //CallExpression[?Yield, ?Await] [ Expression[+In, ?Yield, ?Await] ]
+    //CallExpression[?Yield, ?Await] . IdentifierName
+    //CallExpression[?Yield, ?Await] TemplateLiteral[?Yield, ?Await, +Tagged]
+    //CallExpression[?Yield, ?Await] . PrivateIdentifier
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-functions-and-classes.html#prod-CoverCallExpressionAndAsyncArrowHead
+cover_call_expression_and_async_arrow_head = {
+    member_expression ~ arguments
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-Arguments
+arguments = {
+    "(" ~ ( argument_list ~ ( "," )? )? ~ ")"
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-ArgumentList
+argument_list = {
+    assignment_expression ~ ( "," ~ argument_list )?
 }
 
 // https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-OptionalExpression
@@ -425,6 +522,8 @@ primary_expression = {
     identifier_reference
     |
     literal
+    |
+    object_literal
 }
 
 // https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-IdentifierReference
@@ -449,7 +548,7 @@ numeric_literal = {
 //
 // https://github.com/pest-parser/book/blob/master/src/examples/rust/literals.md
 string_literal = {
-    "\"" ~ (raw_string | escape)* ~ "\""
+    "\"" ~ ( raw_string | escape )* ~ "\""
 }
 
 raw_string = { (!("\\" | "\"") ~ ANY)+ }
@@ -462,9 +561,89 @@ byte       = { "x" ~ hex{2} }
 unicode    = { "u" ~ "{" ~ unicode_hex ~ "}" }
 escape     = { "\\" ~ (predefined | byte | unicode) }
 
+//
+// objects (ObjectLiteral)
+//
+// https://tc39.es/ecma262/multipage/overview.html#sec-objects
 
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-ObjectLiteral
+object_literal = {
+    "{" ~ ( property_definition_list ~ ( "," )? )? ~ "}"
+}
 
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-PropertyDefinitionList
+property_definition_list = {
+    property_definition ~ ( "," ~ property_definition )*
+}
 
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-PropertyDefinition
+property_definition = {
+    //IDENTIFIER ~ ":" ~ IDENTIFIER
+    //|
+    property_name ~ ":" ~ assignment_expression
+    |
+    identifier_reference
+    //|
+    //cover_initialized_name
+    //|
+    //property_name ~ ":" ~ assignment_expression
+    //|
+    //method_definition
+    //|
+    // ... assignment_expression
+}
 
+// https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html#prod-PropertyName
+property_name = {
+    literal_property_name
+//    |
+//    computed_property_name
+}
 
+literal_property_name = {
+    identifier_name
+    |
+    string_literal
+    |
+    numeric_literal
+}
 
+// https://tc39.es/ecma262/multipage/ecmascript-language-lexical-grammar.html#prod-IdentifierName
+identifier_name = {
+    identifier_start ~ ( identifier_part )*
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-lexical-grammar.html#prod-IdentifierStart
+identifier_start = {
+    IDENTIFIER
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-lexical-grammar.html#prod-IdentifierPart
+//identifier_part = {
+//    identifier_part_char
+//    |
+//    "\" ~ unicode_escape_sequence
+//}
+
+identifier_part = {
+    IDENTIFIER
+//    |
+//    "\\" ~ IDENTIFIER
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-lexical-grammar.html#prod-IdentifierPartChar
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-functions-and-classes.html#prod-MethodDefinition
+//method_definition = {
+//    class_element_name ~ "(" ~ unique_formal_parameters ~ ")" ~ "{" function_body ~ "}"
+//    |
+//    generator_method
+//    |
+//    async_method
+//    |
+//    async_generator_method
+//    |
+//    "get" ~ class_element_name ~ "(" ~ ")" ~ "{" function_body ~ "}"
+//    |
+//    "set" ~ class_element_name ~ "(" ~ property_set_parameter_list ~ ")" ~ "{" function_body ~ "}"
+//}

@@ -9,15 +9,15 @@ pub struct CSVParser;
 
 fn main() {
 
-    println!("Hello, world!");
+    //println!("Hello, world!");
 
     //let filename = "examples/snippets/scratchpad.js";
 
     //let filename = "examples/snippets/single_line_comments.js";
 
-    // let filename = "examples/snippets/assignment.js";
-    // let src = fs::read_to_string(&filename).expect("Failed to read file");
-    // let successful_parse = CSVParser::parse(Rule::compilation_unit, &src);
+    let filename = "examples/snippets/assignment.js";
+    let src = fs::read_to_string(&filename).expect("Failed to read file");
+    let successful_parse = CSVParser::parse(Rule::compilation_unit, &src);
 
     //let filename = "examples/snippets/assignment_expression.js";
     //let filename = "examples/snippets/relational_expression.js";
@@ -48,9 +48,34 @@ fn main() {
     // let src = fs::read_to_string(&filename).expect("Failed to read file");
     // let successful_parse = CSVParser::parse(Rule::compilation_unit, &src);
 
-    let filename = "examples/snippets/switch_statement.js";
-    let src = fs::read_to_string(&filename).expect("Failed to read file");
-    let successful_parse = CSVParser::parse(Rule::compilation_unit, &src);
+    // let filename = "examples/snippets/switch_statement.js";
+    // let src = fs::read_to_string(&filename).expect("Failed to read file");
+    // let successful_parse = CSVParser::parse(Rule::compilation_unit, &src);
+
+    // let filename = "examples/snippets/objects.js";
+    // let src = fs::read_to_string(&filename).expect("Failed to read file");
+    // let successful_parse = CSVParser::parse(Rule::compilation_unit, &src);
+
+    // let filename = "examples/snippets/console_log.js";
+    // let src = fs::read_to_string(&filename).expect("Failed to read file");
+    // let successful_parse = CSVParser::parse(Rule::compilation_unit, &src);
+
+    // let filename = "examples/snippets/member_expression.js";
+    // let src = fs::read_to_string(&filename).expect("Failed to read file");
+    // let successful_parse = CSVParser::parse(Rule::member_expression, &src);
+
+    // let filename = "examples/snippets/call_expression.js";
+    // let src = fs::read_to_string(&filename).expect("Failed to read file");
+    // let successful_parse = CSVParser::parse(Rule::call_expression, &src);
+
+    // let filename = "examples/snippets/expression_statement.js";
+    // let src = fs::read_to_string(&filename).expect("Failed to read file");
+    // let successful_parse = CSVParser::parse(Rule::expression_statement, &src);
+
+    // //let filename = "examples/snippets/object_literal.js";
+    // let filename = "examples/snippets/object_literal_2.js";
+    // let src = fs::read_to_string(&filename).expect("Failed to read file");
+    // let successful_parse = CSVParser::parse(Rule::object_literal, &src);
 
     // let filename = "examples/snippets/string_literal.js";
     // let src = fs::read_to_string(&filename).expect("Failed to read file");
@@ -157,6 +182,26 @@ fn recurse_pair(pair: &mut Pair<'_, Rule>, indent: usize) {
     let pair_as_rule = pair.as_rule();
 
     match pair_as_rule {
+
+        Rule::expression_statement => {
+            println!("expression_statement: {}", pair.as_str());
+        },
+
+        Rule::member_expression => {
+            println!("member_expression: {}", pair.as_str());
+        },
+
+        Rule::call_expression => {
+            println!("call_expression: {}", pair.as_str());
+        },
+
+        Rule::cover_call_expression_and_async_arrow_head => {
+            println!("cover_call_expression_and_async_arrow_head: {}", pair.as_str());
+        }
+
+        Rule::object_literal => {
+            println!("object_literal: {}", pair.as_str());
+        },
 
         Rule::switch_statement => {
             println!("switch_statement: {}", pair.as_str());

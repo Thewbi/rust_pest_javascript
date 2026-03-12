@@ -39,3 +39,5 @@ for of - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/State
 
 objects
 member functions
+
+classes -- https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes
