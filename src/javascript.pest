@@ -6,8 +6,9 @@ IDENTIFIER = {
     ( "$" | "_" | ASCII_ALPHA ) ~ ( "$" | "_" | ASCII_ALPHA | ASCII_DIGIT )*
 }
 
-NUMERIC = {            // To recognize a number...
-    ( "-" )? ~ ASCII_DIGIT+      //   take as many ASCII digits as possible (at least one).
+// To recognize a number...
+NUMERIC = {
+    ( "-" )? ~ ASCII_DIGIT+
 }
 
 FUNCTION = {
@@ -540,18 +541,86 @@ literal = {
     string_literal
 }
 
+// https://tc39.es/ecma262/multipage/ecmascript-language-lexical-grammar.html#prod-NumericLiteral
 numeric_literal = {
-    NUMERIC
+    //DecimalLiteral
+    //DecimalBigIntegerLiteral
+    //NonDecimalIntegerLiteral[+Sep]
+    //NonDecimalIntegerLiteral[+Sep] BigIntLiteralSuffix
+    //LegacyOctalIntegerLiteral
+
+    decimal_literal
+    //|
+    //non_decimal_integer_literal
+
+    //NUMERIC
 }
+
+//// https://tc39.es/ecma262/multipage/ecmascript-language-lexical-grammar.html#prod-NonDecimalIntegerLiteral
+//non_decimal_integer_literal = {
+//    BinaryIntegerLiteral[?Sep]
+//    OctalIntegerLiteral[?Sep]
+//    HexIntegerLiteral[?Sep]
+//}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-lexical-grammar.html#prod-DecimalLiteral
+decimal_literal = {
+    decimal_integer_literal ~ "." ~ decimal_digits
+    |
+    decimal_integer_literal ~ ( exponent_part )?
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-lexical-grammar.html#prod-ExponentPart
+exponent_part = {
+    exponent_indicator ~ signed_integer
+}
+
+exponent_indicator = {
+    "e"
+    |
+    "E"
+}
+
+signed_integer = {
+    ( "+" | "-" )? ~ decimal_digits
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-lexical-grammar.html#prod-DecimalIntegerLiteral
+decimal_integer_literal = {
+    //0
+    //NonZeroDigit
+    //NonZeroDigit NumericLiteralSeparator opt DecimalDigits[+Sep]
+    //NonOctalDecimalIntegerLiteral
+
+    "0"
+    |
+    ASCII_NONZERO_DIGIT ~ ( ( numeric_literal_separator )? ~ decimal_digits )?
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-lexical-grammar.html#prod-DecimalDigits
+decimal_digits = {
+    ( ASCII_DIGIT )+
+    |
+    ( ASCII_DIGIT )+ ~ numeric_literal_separator ~ decimal_digits
+}
+
+// https://tc39.es/ecma262/multipage/ecmascript-language-lexical-grammar.html#prod-NumericLiteralSeparator
+numeric_literal_separator = {
+    "_"
+}
+
+
 
 // https://tc39.es/ecma262/multipage/ecmascript-language-lexical-grammar.html#prod-StringLiteral
 //
 // https://github.com/pest-parser/book/blob/master/src/examples/rust/literals.md
 string_literal = {
     "\"" ~ ( raw_string | escape )* ~ "\""
+    |
+    "'" ~ ( raw_string | escape )* ~ "'"
 }
 
-raw_string = { (!("\\" | "\"") ~ ANY)+ }
+raw_string = { (!("\\" | "\"" | "'" ) ~ ANY)+ }
 
 hex = _{ '0'..'9' | 'a'..'f' | 'A'..'F' }
 unicode_hex = { hex{1, 6} }
